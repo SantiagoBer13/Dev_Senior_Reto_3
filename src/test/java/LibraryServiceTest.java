@@ -1,4 +1,5 @@
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -143,6 +144,66 @@ public class LibraryServiceTest {
 
         // Then
         assertEquals("User and Book cannot be null", thrown.getMessage());
+    }
+
+    @Test
+    void testCreateLoanBookAlreadyBorrowed() {
+        // Given
+        User user = new User("Santiago");
+        Book book = new Book("Cien años de Soledad", "Gabriel Garcia Marquez");
+        book.setBorrowed(true);  // El libro ya está prestado
+        
+        // When & Then
+        IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> {
+            libraryService.createLoan(user, book);
+        });
+        assertEquals("Book is already borrowed", thrown.getMessage());
+    }
+
+    @Test
+    void testDeliverBookValid() {
+        // Given
+        String idBook = "B-1";
+        Book book = new Book("Cien años de Soledad", "Gabriel Garcia Marquez");
+        book.setBorrowed(true);  // El libro está prestado
+        
+        // When
+        when(iBookRepository.findById(idBook)).thenReturn(book);
+        libraryService.deliverBook(idBook);
+
+        // Then
+        assertFalse(book.isBorrowed());  // El libro debería estar marcado como no prestado
+    }
+
+    @Test
+    void testDeliverBookNotFound() {
+        // Given
+        String idBook = "B-1";
+        
+        // When
+        when(iBookRepository.findById(idBook)).thenReturn(null);
+        
+        // Then
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            libraryService.deliverBook(idBook);
+        });
+        assertEquals("Book not found", thrown.getMessage());
+    }
+
+    @Test
+    void testDeliverBookNotBorrowed() {
+        // Given
+        String idBook = "B-1";
+        Book book = new Book("Cien años de Soledad", "Gabriel Garcia Marquez");
+        
+        // When
+        when(iBookRepository.findById(idBook)).thenReturn(book);
+        
+        // Then
+        IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> {
+            libraryService.deliverBook(idBook);
+        });
+        assertEquals("The book is not currently borrowed", thrown.getMessage());
     }
 
     @Test

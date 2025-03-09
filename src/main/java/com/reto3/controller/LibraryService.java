@@ -44,7 +44,23 @@ public class LibraryService {
         if(user == null || book == null){
             throw new IllegalArgumentException("User and Book cannot be null");
         }
+        if(book.isBorrowed()){
+            throw new IllegalStateException("Book is already borrowed");
+        }
         this.iLoanRepository.saveLoan(new Loan(user, book));
+        book.setBorrowed(true);  // Marca el libro como prestado.
+    }
+    
+    public void deliverBook(String idBook){
+        // Verificar el estado del libro
+        Book book = iBookRepository.findById(idBook);
+        if(book == null){
+            throw new IllegalArgumentException("Book not found");
+        }
+        if(!book.isBorrowed()){
+            throw new IllegalStateException("The book is not currently borrowed");
+        }
+        book.setBorrowed(false);  // Marca el libro como disponible
     }
 
     public List<Loan> getLoansByUserId(String idUser){
